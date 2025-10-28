@@ -11,9 +11,9 @@ st.set_page_config(page_title="Crop Yield Predictor", page_icon="🌾", layout="
 @st.cache_resource
 def load_models():
     try:
-        model = joblib.load("model/crop_yield_model.pkl")
-        transformer = joblib.load("model/power_transformer.pkl")
-        trained_columns = joblib.load("model/trained_columns.pkl")
+        model = joblib.load("crop_yield_model.pkl")
+        transformer = joblib.load("power_transformer.pkl")
+        trained_columns = joblib.load("trained_columns.pkl")
         return model, transformer, trained_columns, None
     except Exception as e:
         return None, None, None, str(e)

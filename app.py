@@ -12,26 +12,24 @@ import os
 import joblib
 import streamlit as st
 
-@st.cache_resource
-def load_models():
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(base_dir, "crop_yield_model.pkl")
-        transformer_path = os.path.join(base_dir, "power_transformer.pkl")
-        columns_path = os.path.join(base_dir, "trained_columns.pkl")
+# Base directory of the current app
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-        # Optional debugging info
-        st.write("🔍 Model path:", model_path)
-        st.write("📁 Directory contents:", os.listdir(base_dir))
+# Load model safely
+try:
+    model_path = os.path.join(BASE_DIR, 'crop_yield_model.pkl')
+    transformer_path = os.path.join(BASE_DIR, 'power_transformer.pkl')
+    columns_path = os.path.join(BASE_DIR, 'trained_columns.pkl')
 
-        # Load models safely
-        model = joblib.load(model_path)
-        transformer = joblib.load(transformer_path)
-        trained_columns = joblib.load(columns_path)
+    model = joblib.load(model_path)
+    transformer = joblib.load(transformer_path)
+    trained_columns = joblib.load(columns_path)
+    st.success("✅ Model loaded successfully!")
 
-        return model, transformer, trained_columns, None
-    except Exception as e:
-        return None, None, None, str(e)
+except FileNotFoundError as e:
+    st.error(f"❌ Model file not found: {e}")
+except Exception as e:
+    st.error(f"⚠️ Error loading model: {e}")
 
 
 # --- Safe Model Loading ---

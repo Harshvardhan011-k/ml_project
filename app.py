@@ -7,6 +7,33 @@ import os
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Crop Yield Predictor", page_icon="🌾", layout="centered")
 
+
+import os
+import joblib
+import streamlit as st
+
+@st.cache_resource
+def load_models():
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(base_dir, "crop_yield_model.pkl")
+        transformer_path = os.path.join(base_dir, "power_transformer.pkl")
+        columns_path = os.path.join(base_dir, "trained_columns.pkl")
+
+        # Optional debugging info
+        st.write("🔍 Model path:", model_path)
+        st.write("📁 Directory contents:", os.listdir(base_dir))
+
+        # Load models safely
+        model = joblib.load(model_path)
+        transformer = joblib.load(transformer_path)
+        trained_columns = joblib.load(columns_path)
+
+        return model, transformer, trained_columns, None
+    except Exception as e:
+        return None, None, None, str(e)
+
+
 # --- Safe Model Loading ---
 @st.cache_resource
 def load_models():

@@ -9,11 +9,30 @@ st.set_page_config(page_title="Crop Yield Predictor", page_icon="🌾", layout="
 
 
 import os
+import joblib
 import streamlit as st
 
-st.write("📁 Current working directory:", os.getcwd())
-st.write("📄 Files in current directory:", os.listdir())
-st.write("📂 Files in /mount/src/ml_project:", os.listdir("/mount/src/ml_project"))
+# Get absolute path to current script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Construct full paths to model files
+MODEL_PATH = os.path.join(BASE_DIR, 'crop_yield_model.pkl')
+TRANSFORMER_PATH = os.path.join(BASE_DIR, 'power_transformer.pkl')
+COLUMNS_PATH = os.path.join(BASE_DIR, 'trained_columns.pkl')
+
+st.write("✅ Looking for model at:", MODEL_PATH)
+
+try:
+    model = joblib.load(MODEL_PATH)
+    transformer = joblib.load(TRANSFORMER_PATH)
+    trained_columns = joblib.load(COLUMNS_PATH)
+    st.success("Model and supporting files loaded successfully!")
+
+except FileNotFoundError as e:
+    st.error(f"❌ File not found: {e.filename}")
+except Exception as e:
+    st.error(f"⚠️ Unexpected error while loading: {e}")
+
 
 # --- Safe Model Loading ---
 @st.cache_resource

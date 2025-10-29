@@ -3,36 +3,10 @@ import joblib
 import pandas as pd
 import numpy as np
 import os
+import plotly.express as px
 
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Crop Yield Predictor", page_icon="🌾", layout="centered")
-
-
-import os
-import joblib
-import streamlit as st
-
-# Get absolute path to current script
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Construct full paths to model files
-MODEL_PATH = os.path.join(BASE_DIR, 'crop_yield_model.pkl')
-TRANSFORMER_PATH = os.path.join(BASE_DIR, 'power_transformer.pkl')
-COLUMNS_PATH = os.path.join(BASE_DIR, 'trained_columns.pkl')
-
-st.write("✅ Looking for model at:", MODEL_PATH)
-
-try:
-    model = joblib.load(MODEL_PATH)
-    transformer = joblib.load(TRANSFORMER_PATH)
-    trained_columns = joblib.load(COLUMNS_PATH)
-    st.success("Model and supporting files loaded successfully!")
-
-except FileNotFoundError as e:
-    st.error(f"❌ File not found: {e.filename}")
-except Exception as e:
-    st.error(f"⚠️ Unexpected error while loading: {e}")
-
 
 # --- Safe Model Loading ---
 @st.cache_resource
@@ -64,25 +38,37 @@ crops = [
 
 seasons = ["Kharif", "Rabi", "Summer", "Autumn", "Winter", "Whole Year"]
 
-# --- Custom CSS Styling ---
+# --- ✅ Updated Custom CSS Styling with Text Color Fixes ---
 st.markdown("""
     <style>
-    .stApp { background-color: #f8f9fa; }
+    .stApp { 
+        background-color: #f8f9fa; 
+        color: #222;  
+        font-family: 'Inter', sans-serif;
+    }
+
     .hero {
         background-image: url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80');
         background-size: cover; background-position: center;
         height: 250px; border-radius: 12px; display: flex;
         flex-direction: column; align-items: center; justify-content: center;
-        color: white; text-shadow: 1px 1px 6px rgba(0,0,0,0.6);
+        color: white; 
+        text-shadow: 1px 1px 6px rgba(0,0,0,0.6);
         margin-bottom: 30px;
     }
-    .hero h1 { font-size: 2.5rem; font-weight: 700; margin: 0; }
-    .hero p { font-size: 1.1rem; margin-top: 10px; opacity: 0.95; }
+    .hero h1 { font-size: 2.5rem; font-weight: 700; margin: 0; color: white; }
+    .hero p { font-size: 1.1rem; margin-top: 10px; opacity: 0.95; color: white; }
+
     .prediction-box {
-        background-color: white; padding: 2rem 2.5rem;
-        border-radius: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        max-width: 750px; margin: auto;
+        background-color: white; 
+        padding: 2rem 2.5rem;
+        border-radius: 15px; 
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        max-width: 750px; 
+        margin: auto;
+        color: #222;  
     }
+
     div.stButton > button:first-child {
         background: linear-gradient(90deg, #4CAF50, #2E7D32);
         color: white; border: none; border-radius: 10px;
@@ -93,23 +79,41 @@ st.markdown("""
         background: linear-gradient(90deg, #45a049, #256e29);
         transform: scale(1.03);
     }
+
     .feature-section {
         display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;
         margin-top: 2rem; margin-bottom: 2rem;
     }
     .feature-card {
-        background-color: #ffffff; width: 270px; border-radius: 15px;
-        padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        text-align: center; border: 1px solid #f0f0f0;
+        background-color: #ffffff; 
+        width: 270px; 
+        border-radius: 15px;
+        padding: 1.5rem; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        text-align: center; 
+        border: 1px solid #f0f0f0;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: #222;  
     }
-    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
-    .feature-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .feature-card:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12); 
+    }
+    .feature-icon { font-size: 2rem; margin-bottom: 0.5rem; color: #388e3c; }
     .feature-title { font-weight: 700; font-size: 1.1rem; color: #333; margin-bottom: 0.3rem; }
-    .feature-desc { color: #6b6b6b; font-size: 0.95rem; }
+    .feature-desc { color: #555; font-size: 0.95rem; }
+
     .footer {
-        text-align: center; color: #6b6b6b; font-size: 0.9rem;
-        margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;
+        text-align: center; 
+        color: #555; 
+        font-size: 0.9rem;
+        margin-top: 2rem; 
+        padding-top: 1rem; 
+        border-top: 1px solid #eee;
+    }
+
+    .stCaption, .stMarkdown, .stDataFrame, .stText, .stSubheader, .stHeader {
+        color: #222 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -163,21 +167,14 @@ if st.button("🚀 Predict Crop Yield"):
         input_encoded = pd.get_dummies(input_df)
         input_encoded = input_encoded.reindex(columns=trained_columns, fill_value=0)
 
-        # Detect multicollinearity warning
         if np.any(input_encoded.corr().abs().values > 0.95):
             st.info("⚠️ High correlation detected between some variables. Model handles this internally.")
 
-        # Predict
         input_transformed = transformer.transform(input_encoded)
         predicted_yield = model.predict(input_transformed)[0]
 
-        st.write("🧠 Encoded Input Preview:")
-        st.dataframe(input_encoded)
-
-        # --- Output Section ---
         st.success(f"🌱 **Predicted Crop Yield:** {predicted_yield:.2f} tons/hectare")
 
-        # --- Result Summary ---
         st.markdown("#### 📊 Result Summary")
         st.write(f"""
         - **State:** {state}  
@@ -188,11 +185,103 @@ if st.button("🚀 Predict Crop Yield"):
         - **Rainfall:** {rainfall} mm  
         """)
 
-        # --- Visual Insight ---
-        st.bar_chart(pd.DataFrame({
-            "Parameter": ["Rainfall (mm)", "Pesticide (ml)", "Predicted Yield"],
-            "Value": [rainfall, pesticide_ml, predicted_yield]
-        }).set_index("Parameter"))
+        # --- Trend Visualizations (Enhanced with Plotly) ---
+        st.write("---")
+        st.subheader("📊 Crop Yield Trends and Insights")
+
+        if model is not None:
+            years = np.arange(2010, 2035)
+            rainfall_range = np.linspace(200, 3000, 8)
+            pesticide_range = np.linspace(100, 5000, 8)
+
+            # Yield Trend Over Years
+            trend_data = []
+            for year in years:
+                temp_input = {
+                    "State": state,
+                    "Crop_Year": float(year),
+                    "Season": season,
+                    "Crop": crop,
+                    "Pesticide": float(pesticide_ml),
+                    "Annual_Rainfall": float(rainfall)
+                }
+                temp_df = pd.DataFrame([temp_input])
+                temp_encoded = pd.get_dummies(temp_df)
+                temp_encoded = temp_encoded.reindex(columns=trained_columns, fill_value=0)
+                temp_transformed = transformer.transform(temp_encoded)
+                temp_pred = model.predict(temp_transformed)[0]
+                trend_data.append({"Year": year, "Predicted_Yield": temp_pred})
+            trend_df = pd.DataFrame(trend_data)
+
+            fig1 = px.line(trend_df, x="Year", y="Predicted_Yield",
+                           title="📅 Predicted Crop Yield Trend (2010–2035)",
+                           markers=True, color_discrete_sequence=["#2E7D32"])
+            fig1.update_traces(line=dict(width=3))
+            fig1.update_layout(title_font=dict(size=20, color="#2E7D32"),
+                               xaxis_title="Year", yaxis_title="Predicted Yield (tons/hectare)",
+                               font=dict(size=12, color="#222"),
+                               plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig1, use_container_width=True)
+            st.caption("📅 Yield trend across years (keeping rainfall and pesticide constant).")
+
+            # Rainfall vs Yield
+            rain_data = []
+            for r in rainfall_range:
+                temp_input = {
+                    "State": state,
+                    "Crop_Year": float(crop_year),
+                    "Season": season,
+                    "Crop": crop,
+                    "Pesticide": float(pesticide_ml),
+                    "Annual_Rainfall": float(r)
+                }
+                temp_df = pd.DataFrame([temp_input])
+                temp_encoded = pd.get_dummies(temp_df)
+                temp_encoded = temp_encoded.reindex(columns=trained_columns, fill_value=0)
+                temp_transformed = transformer.transform(temp_encoded)
+                temp_pred = model.predict(temp_transformed)[0]
+                rain_data.append({"Rainfall (mm)": r, "Predicted_Yield": temp_pred})
+            rain_df = pd.DataFrame(rain_data)
+
+            fig2 = px.area(rain_df, x="Rainfall (mm)", y="Predicted_Yield",
+                           title="💧 Rainfall vs Predicted Yield",
+                           color_discrete_sequence=["#64B5F6"])
+            fig2.update_layout(title_font=dict(size=20, color="#1565C0"),
+                               xaxis_title="Rainfall (mm)", yaxis_title="Predicted Yield (tons/hectare)",
+                               font=dict(size=12, color="#222"),
+                               plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig2, use_container_width=True)
+            st.caption("💧 Relationship between rainfall and predicted yield.")
+
+            # Pesticide vs Yield
+            pest_data = []
+            for p in pesticide_range:
+                temp_input = {
+                    "State": state,
+                    "Crop_Year": float(crop_year),
+                    "Season": season,
+                    "Crop": crop,
+                    "Pesticide": float(p),
+                    "Annual_Rainfall": float(rainfall)
+                }
+                temp_df = pd.DataFrame([temp_input])
+                temp_encoded = pd.get_dummies(temp_df)
+                temp_encoded = temp_encoded.reindex(columns=trained_columns, fill_value=0)
+                temp_transformed = transformer.transform(temp_encoded)
+                temp_pred = model.predict(temp_transformed)[0]
+                pest_data.append({"Pesticide (ml)": p, "Predicted_Yield": temp_pred})
+            pest_df = pd.DataFrame(pest_data)
+
+            fig3 = px.line(pest_df, x="Pesticide (ml)", y="Predicted_Yield",
+                           title="🧴 Pesticide Use vs Predicted Yield",
+                           markers=True, color_discrete_sequence=["#F9A825"])
+            fig3.update_traces(line=dict(width=3))
+            fig3.update_layout(title_font=dict(size=20, color="#F57F17"),
+                               xaxis_title="Pesticide Used (ml)", yaxis_title="Predicted Yield (tons/hectare)",
+                               font=dict(size=12, color="#222"),
+                               plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig3, use_container_width=True)
+            st.caption("🧴 Relationship between pesticide use and predicted yield.")
 
 # --- Feature Cards Section ---
 st.write("---")
